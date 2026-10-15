@@ -1,0 +1,17 @@
+{
+  "name": "lucid-live",
+  "version": "1.0.0",
+  "description": "Realtime Lucid Trading Discord member counter with shared floating emojis",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "MOCK=1 node server.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "ws": "8.18.0"
+  }
+}

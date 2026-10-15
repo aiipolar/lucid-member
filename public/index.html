@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lucid Trading · Live Members</title>
+<meta name="description" content="Live member count for the Lucid Trading Discord. Send an emoji and everyone watching sees it float by.">
+<meta name="theme-color" content="#06081a">
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237aa2ff'/%3E%3Cstop offset='1' stop-color='%2335e0c8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='9' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one deep aurora scene; shared emojis drift up between the light and the glass; a single liquid-glass panel holds the count, a glass dock sends emojis. */
+:root{
+  --ink-0:#04060f;          /* deepest night */
+  --ink-1:#0a0f2c;          /* indigo floor */
+  --aur-violet:#6f5bff;
+  --aur-blue:#2f7bff;
+  --aur-teal:#22e0c4;
+  --aur-rose:#ff5ea8;
+  --text:#f4f6ff;
+  --text-2:rgba(236,240,255,.68);
+  --text-3:rgba(236,240,255,.44);
+  --up:#4ff0a8;
+  --down:#ff7a8a;
+  --glass-fill:rgba(255,255,255,.075);
+  --glass-edge:rgba(255,255,255,.22);
+  --font-ui:"Geist", ui-sans-serif, -apple-system, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --font-data:"Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --emoji:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{
+  margin:0; background:var(--ink-0); color:var(--text);
+  font:15px/1.5 var(--font-ui); -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button{font:inherit;color:inherit}
+
+/* ---------- scene ---------- */
+.scene{position:fixed; inset:0; overflow:hidden; z-index:0;
+  background:
+    radial-gradient(120% 80% at 50% 110%, #101a4a 0%, transparent 60%),
+    linear-gradient(180deg, var(--ink-0), var(--ink-1));
+}
+.blob{position:absolute; border-radius:50%; filter:blur(70px); opacity:.85; will-change:transform; mix-blend-mode:screen}
+.b1{width:62vmax;height:62vmax;left:-18vmax;top:-22vmax;background:radial-gradient(circle at 40% 40%, var(--aur-violet), transparent 62%);animation:drift1 34s ease-in-out infinite alternate}
+.b2{width:54vmax;height:54vmax;right:-20vmax;top:6vmax;background:radial-gradient(circle at 50% 50%, var(--aur-teal), transparent 60%);opacity:.55;animation:drift2 41s ease-in-out infinite alternate}
+.b3{width:48vmax;height:48vmax;left:18vmax;bottom:-26vmax;background:radial-gradient(circle at 50% 50%, var(--aur-blue), transparent 62%);animation:drift3 38s ease-in-out infinite alternate}
+.b4{width:30vmax;height:30vmax;right:14vmax;bottom:-8vmax;background:radial-gradient(circle, var(--aur-rose), transparent 62%);opacity:.38;animation:drift2 29s ease-in-out infinite alternate-reverse}
+@keyframes drift1{to{transform:translate(14vmax,10vmax) scale(1.12)}}
+@keyframes drift2{to{transform:translate(-12vmax,8vmax) scale(.9)}}
+@keyframes drift3{to{transform:translate(-10vmax,-12vmax) scale(1.15)}}
+/* watermark: a giant "aii" in the light layer, so the glass bends and blurs it */
+.wm{position:absolute; right:-2vw; bottom:-6vh; transform:rotate(-8deg); transform-origin:100% 100%; font:700 clamp(200px,36vw,560px)/.8 var(--font-ui); letter-spacing:-.07em; white-space:nowrap; pointer-events:none; user-select:none;
+  color:rgba(255,255,255,.07); -webkit-text-stroke:2px rgba(255,255,255,.16);
+  animation:wmfloat 22s ease-in-out infinite alternate}
+@keyframes wmfloat{to{transform:translate(-2vw,-3vh) rotate(-6deg)}}
+.credit{position:fixed; z-index:6; top:calc(14px + env(safe-area-inset-top,0px)); left:calc(14px + env(safe-area-inset-left,0px)); display:inline-flex; align-items:center; gap:8px;
+  padding:7px 13px 7px 8px; border-radius:999px; font:500 12px/1 var(--font-data); letter-spacing:.06em; color:var(--text-2); text-decoration:none; user-select:none}
+.credit b{display:grid; place-items:center; width:22px; height:22px; border-radius:50%; font:700 11px/1 var(--font-ui); letter-spacing:-.04em; color:#fff;
+  background:linear-gradient(135deg,var(--aur-violet),var(--aur-teal)); box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.credit span{color:var(--text)}
+.grain{position:absolute; inset:-50%; opacity:.07; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* shared emoji layer: above the light, below the glass */
+.sky{position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden}
+.floater{position:absolute; bottom:-80px; left:0; font-family:var(--emoji); line-height:1; will-change:transform,opacity; user-select:none;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+.floater.mine::after{content:""; position:absolute; inset:-14px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.35), transparent 65%); z-index:-1}
+
+/* ---------- liquid glass ---------- */
+.glass{
+  position:relative; isolation:isolate;
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.05) 38%, rgba(255,255,255,.03) 62%, rgba(255,255,255,.09) 100%);
+  -webkit-backdrop-filter:blur(26px) saturate(185%) brightness(1.05);
+  backdrop-filter:blur(26px) saturate(185%) brightness(1.05);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 rgba(255,255,255,.12),
+    inset 0 22px 44px -26px rgba(255,255,255,.28),
+    inset 0 -30px 50px -40px rgba(120,160,255,.35),
+    0 40px 90px -30px rgba(0,0,0,.6),
+    0 2px 6px rgba(0,0,0,.18);
+}
+/* rim light: a gradient hairline drawn with a mask */
+.glass::before{
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none; z-index:2;
+  background:linear-gradient(140deg, rgba(255,255,255,.75), rgba(255,255,255,.08) 30%, rgba(255,255,255,.04) 60%, rgba(255,255,255,.45));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+}
+/* specular highlight that follows the pointer */
+.glass::after{
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+  background:radial-gradient(520px circle at var(--mx,28%) var(--my,-10%), rgba(255,255,255,.16), transparent 45%);
+  transition:background-position .2s;
+}
+
+/* ---------- page ---------- */
+.page{
+  position:relative; z-index:2; min-height:100%;
+  display:flex; flex-direction:column; align-items:center; gap:22px;
+  padding-block:max(28px, env(safe-area-inset-top,0px)) calc(150px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+}
+
+.panel{width:min(760px,100%); border-radius:40px; padding:clamp(22px,4.5vw,40px); display:grid; gap:clamp(18px,3vw,28px); margin-top:clamp(4px,5vh,56px)}
+
+.head{display:flex; align-items:center; gap:14px; min-width:0}
+.avatar{width:56px; height:56px; border-radius:18px; flex:none; overflow:hidden; position:relative;
+  background:linear-gradient(135deg,var(--aur-blue),var(--aur-teal));
+  box-shadow:0 0 0 1px rgba(255,255,255,.25), 0 10px 24px -8px rgba(0,0,0,.6)}
+.avatar img{width:100%; height:100%; object-fit:cover; display:block}
+.avatar .ph{position:absolute; inset:0; display:grid; place-items:center; font-weight:650; font-size:22px; letter-spacing:-.04em}
+.who{min-width:0; flex:1}
+.who h1{margin:0; font-size:20px; font-weight:600; letter-spacing:-.02em; line-height:1.2; text-wrap:balance}
+.who a{color:var(--text-3); text-decoration:none; font:12.5px/1.4 var(--font-data); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.who h1{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.who a:hover,.who a:focus-visible{color:var(--text-2)}
+
+.live{display:inline-flex; align-items:center; gap:8px; padding:7px 12px 7px 10px; border-radius:999px; font:500 11.5px/1 var(--font-data); letter-spacing:.12em; text-transform:uppercase;
+  background:rgba(79,240,168,.1); color:var(--up); box-shadow:inset 0 0 0 1px rgba(79,240,168,.28); flex:none}
+.live i{width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 0 0 currentColor; animation:ping 1.8s infinite}
+.live.off{background:rgba(255,255,255,.06); color:var(--text-3); box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.live.off i{animation:none}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(79,240,168,.7)}80%,100%{box-shadow:0 0 0 9px rgba(79,240,168,0)}}
+
+.eyebrow{font:500 11.5px/1 var(--font-data); letter-spacing:.16em; text-transform:uppercase; color:var(--text-3)}
+
+.countwrap{display:grid; gap:12px}
+.countrow{display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; min-width:0}
+.count{display:flex; font-weight:600; font-size:clamp(58px,15vw,150px); line-height:1; letter-spacing:-.05em; font-variant-numeric:tabular-nums; min-height:1em; max-width:100%}
+.count .digit{display:inline-block; height:1em; overflow:hidden;
+  -webkit-mask-image:linear-gradient(transparent, #000 9%, #000 91%, transparent); mask-image:linear-gradient(transparent, #000 9%, #000 91%, transparent)}
+.count .strip{display:flex; flex-direction:column; transition:transform 1.25s cubic-bezier(.16,1,.3,1)}
+.count .strip span,.count .sep{height:1em; line-height:1em; display:block;
+  background:linear-gradient(180deg,#ffffff 25%, rgba(214,226,255,.72) 95%); -webkit-background-clip:text; background-clip:text; color:transparent}
+.count .sep{margin-inline:-.02em; opacity:.45}
+.count.skeleton{width:5.2em; height:1em; border-radius:.18em; background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.14),rgba(255,255,255,.06)); background-size:200% 100%; animation:shimmer 1.4s linear infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+.delta{font:500 15px/1 var(--font-data); padding:8px 11px; border-radius:999px; margin-bottom:.9em; opacity:0; transform:translateY(8px); transition:opacity .4s, transform .5s cubic-bezier(.16,1,.3,1)}
+.delta.show{opacity:1; transform:none}
+.delta.up{color:var(--up); background:rgba(79,240,168,.1); box-shadow:inset 0 0 0 1px rgba(79,240,168,.25)}
+.delta.down{color:var(--down); background:rgba(255,122,138,.1); box-shadow:inset 0 0 0 1px rgba(255,122,138,.25)}
+
+.stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px}
+.stat{border-radius:22px; padding:14px 16px; background:rgba(255,255,255,.045); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), inset 0 1px 0 rgba(255,255,255,.12); min-width:0}
+.stat .k{font:500 10.5px/1.2 var(--font-data); letter-spacing:.12em; text-transform:uppercase; color:var(--text-3); display:flex; align-items:center; gap:7px; white-space:nowrap}
+.stat .v{font-size:22px; font-weight:600; letter-spacing:-.03em; margin-top:8px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.dot{width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 10px var(--up); flex:none}
+.dot.you{background:#9db8ff; box-shadow:0 0 10px #9db8ff}
+
+.trend{border-radius:24px; padding:16px 18px 12px; background:rgba(4,8,30,.22); box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.trend-top{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline}
+.trend-top .r{font:12px/1.4 var(--font-data); color:var(--text-3); font-variant-numeric:tabular-nums}
+.spark{display:block; width:100%; height:86px; margin-top:10px; overflow:visible}
+.spark-empty{height:86px; display:grid; place-items:center; color:var(--text-3); font-size:13px}
+
+.foot{display:flex; justify-content:space-between; gap:10px 16px; flex-wrap:wrap; align-items:center; color:var(--text-3); font:12px/1.5 var(--font-data)}
+.join{display:inline-flex; align-items:center; gap:9px; text-decoration:none; color:var(--text); font:600 14px/1 var(--font-ui); padding:12px 18px; border-radius:999px;
+  background:linear-gradient(180deg, rgba(120,140,255,.55), rgba(88,101,242,.55)); box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 0 0 1px rgba(255,255,255,.18), 0 10px 30px -10px rgba(88,101,242,.9);
+  transition:transform .2s, box-shadow .2s}
+.join:hover{transform:translateY(-1px); box-shadow:inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 0 1px rgba(255,255,255,.25), 0 14px 36px -10px rgba(88,101,242,1)}
+.join:focus-visible,.dock button:focus-visible,.more-grid button:focus-visible,.custom button:focus-visible,.custom input:focus-visible{outline:2px solid #bcd0ff; outline-offset:2px}
+.join svg{width:18px; height:18px}
+
+/* ---------- emoji dock ---------- */
+.dockwrap{position:fixed; left:0; right:0; bottom:0; z-index:5; display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  padding-left:max(12px, env(safe-area-inset-left,0px)); padding-right:max(12px, env(safe-area-inset-right,0px)); pointer-events:none}
+.hint{font-size:12.5px; color:var(--text-2); padding:6px 12px; border-radius:999px; background:rgba(6,10,30,.35); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); pointer-events:auto; text-align:center}
+.dock{pointer-events:auto; border-radius:999px; padding:8px; display:flex; gap:4px; max-width:100%; overflow-x:auto; scrollbar-width:none}
+.dock::-webkit-scrollbar{display:none}
+.dock button{flex:none; width:52px; height:52px; border-radius:50%; border:0; background:transparent; cursor:pointer; font-family:var(--emoji); font-size:27px; line-height:1;
+  display:grid; place-items:center; transition:transform .25s cubic-bezier(.34,1.56,.64,1), background .2s; -webkit-tap-highlight-color:transparent}
+.dock button:hover{background:rgba(255,255,255,.12); transform:translateY(-4px) scale(1.12)}
+.dock button:active{transform:scale(.88)}
+.dock button.pop{animation:pop .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.8)}50%{transform:scale(1.28)}100%{transform:scale(1)}}
+.dock .more{font:500 22px/1 var(--font-ui); color:var(--text-2); background:rgba(255,255,255,.07); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.dock .sepv{width:1px; flex:none; margin:10px 4px; background:rgba(255,255,255,.16)}
+
+.picker{position:fixed; z-index:6; left:50%; bottom:calc(98px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); width:min(440px, calc(100vw - 24px)); border-radius:30px; padding:16px; display:grid; gap:14px;
+  transform-origin:50% 100%; animation:rise .35s cubic-bezier(.16,1,.3,1)}
+@keyframes rise{from{opacity:0; transform:translateX(-50%) translateY(14px) scale(.96)}}
+.picker .eyebrow{padding-left:4px}
+.more-grid{display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:4px}
+.more-grid button{aspect-ratio:1; max-width:100%; border:0; border-radius:14px; background:transparent; cursor:pointer; font-family:var(--emoji); font-size:24px; line-height:1; transition:background .15s, transform .2s cubic-bezier(.34,1.56,.64,1)}
+.more-grid button:hover{background:rgba(255,255,255,.12); transform:scale(1.12)}
+.custom{display:flex; gap:8px}
+.custom input{flex:1; min-width:0; border:0; border-radius:16px; padding:12px 14px; background:rgba(0,0,0,.25); color:var(--text); font:15px var(--font-ui); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.custom input::placeholder{color:var(--text-3)}
+.custom button{border:0; border-radius:16px; padding:0 16px; font-weight:600; cursor:pointer; background:rgba(255,255,255,.14); box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.custom .err{color:var(--down); font-size:12.5px; padding-left:4px}
+
+.toast{position:fixed; top:calc(16px + env(safe-area-inset-top,0px)); left:50%; transform:translate(-50%,-20px); opacity:0; z-index:9; padding:10px 16px; border-radius:999px; font-size:13.5px; transition:opacity .3s, transform .4s cubic-bezier(.16,1,.3,1); pointer-events:none}
+.toast.show{opacity:1; transform:translate(-50%,0)}
+
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+
+@media (max-width:640px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panel{border-radius:32px}
+  .dock button{width:46px; height:46px; font-size:24px}
+  .who h1{font-size:18px}
+}
+@media (prefers-reduced-motion:reduce){
+  .blob,.wm{animation:none}
+  .count .strip{transition-duration:.01s}
+  .live i{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+  <div class="wm">aii</div>
+  <div class="grain"></div>
+</div>
+<div class="credit glass" aria-label="Made by aii"><b>ai</b>made by <span>aii</span></div>
+<div class="sky" id="sky" aria-hidden="true"></div>
+
+<main class="page">
+  <section class="panel glass" id="panel" aria-labelledby="gname">
+    <div class="head">
+      <div class="avatar" id="avatar"><span class="ph">L</span></div>
+      <div class="who">
+        <h1 id="gname">Lucid Trading</h1>
+        <a href="https://discord.gg/lucidtrading" target="_blank" rel="noopener" id="ginvite">discord.gg/lucidtrading</a>
+      </div>
+      <span class="live off" id="live"><i></i><span id="liveTxt">Connecting</span></span>
+    </div>
+
+    <div class="countwrap">
+      <div class="eyebrow">Members</div>
+      <div class="countrow">
+        <div class="count skeleton" id="count" aria-hidden="true"></div>
+        <span class="delta" id="delta"></span>
+      </div>
+      <span class="sr" id="countSr" aria-live="polite"></span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k"><span class="dot"></span>Online now</div><div class="v" id="online">—</div></div>
+      <div class="stat"><div class="k">Share online</div><div class="v" id="ratio">—</div></div>
+      <div class="stat"><div class="k"><span class="dot you"></span>On this page</div><div class="v" id="viewers">—</div></div>
+      <div class="stat"><div class="k">Emojis sent</div><div class="v" id="etotal">—</div></div>
+    </div>
+
+    <div class="trend">
+      <div class="trend-top">
+        <span class="eyebrow">Member trend</span>
+        <span class="r" id="range"></span>
+      </div>
+      <div id="sparkHost"><div class="spark-empty">Collecting the first data points…</div></div>
+    </div>
+
+    <div class="foot">
+      <span id="updated">Waiting for Discord…</span>
+      <a class="join" href="https://discord.gg/lucidtrading" target="_blank" rel="noopener" id="joinBtn">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.3A17 17 0 0 0 15.4 4l-.5 1.1a15.7 15.7 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17 17 0 0 0 5.2 2.6l1.1-1.8c-.6-.2-1.2-.5-1.7-.9l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3c-.5.4-1.1.7-1.7.9l1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.7ZM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1Z"/></svg>
+        Join the server
+      </a>
+    </div>
+  </section>
+</main>
+
+<div class="dockwrap">
+  <div class="hint" id="hint">Tap an emoji — everyone on this page sees it float by</div>
+  <nav class="dock glass" id="dock" aria-label="Send an emoji"></nav>
+</div>
+
+<div class="picker glass" id="picker" hidden>
+  <div class="eyebrow">More emojis</div>
+  <div class="more-grid" id="moreGrid"></div>
+  <form class="custom" id="customForm" autocomplete="off">
+    <input id="customInput" maxlength="16" placeholder="Paste any emoji" aria-label="Any emoji">
+    <button type="submit">Send</button>
+  </form>
+  <div class="err" id="customErr" hidden>That's not a single emoji.</div>
+</div>
+
+<div class="toast glass" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const fmt = new Intl.NumberFormat('en-US');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------------------------------------------------------- pointer-following specular light
+  const glassEls = () => document.querySelectorAll('.glass');
+  addEventListener('pointermove', (e) => {
+    for (const el of glassEls()) {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+      el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+    }
+  }, { passive: true });
+
+  // ---------------------------------------------------------- rolling counter
+  const countEl = $('#count');
+  let strips = [], shape = '';
+  function setCount(n) {
+    const str = fmt.format(n);
+    const sh = str.replace(/\d/g, 'd');
+    if (sh !== shape) {
+      shape = sh; strips = [];
+      countEl.classList.remove('skeleton');
+      countEl.textContent = '';
+      for (const ch of str) {
+        if (/\d/.test(ch)) {
+          const col = document.createElement('span'); col.className = 'digit';
+          const strip = document.createElement('span'); strip.className = 'strip';
+          for (let d = 0; d <= 9; d++) { const s = document.createElement('span'); s.textContent = d; strip.appendChild(s); }
+          col.appendChild(strip); countEl.appendChild(col); strips.push(strip);
+        } else {
+          const s = document.createElement('span'); s.className = 'sep'; s.textContent = ch; countEl.appendChild(s);
+        }
+      }
+      countEl.offsetHeight; // commit the 0 position so the first roll animates
+    }
+    const digits = str.replace(/\D/g, '');
+    strips.forEach((strip, i) => {
+      strip.style.transitionDelay = (strips.length - 1 - i) * 55 + 'ms';
+      strip.style.transform = `translateY(${-Number(digits[i]) * 10}%)`;
+    });
+    $('#countSr').textContent = `${str} members`;
+    document.title = `${str} members · Lucid Trading`;
+  }
+
+  let deltaTimer;
+  function showDelta(d) {
+    if (!d) return;
+    const el = $('#delta');
+    el.className = 'delta ' + (d > 0 ? 'up' : 'down');
+    el.textContent = (d > 0 ? '+' : '−') + fmt.format(Math.abs(d));
+    requestAnimationFrame(() => el.classList.add('show'));
+    clearTimeout(deltaTimer);
+    deltaTimer = setTimeout(() => el.classList.remove('show'), 6000);
+  }
+
+  // ---------------------------------------------------------- sparkline
+  let history = [];
+  const host = $('#sparkHost');
+  function drawSpark() {
+    if (history.length < 2) return;
+    const w = Math.max(200, host.clientWidth), h = 86, pad = 6;
+    const ms = history.map((p) => p[1]);
+    let lo = Math.min(...ms), hi = Math.max(...ms);
+    if (hi - lo < 4) { const mid = (hi + lo) / 2; lo = mid - 2; hi = mid + 2; }
+    const t0 = history[0][0], t1 = history[history.length - 1][0] || t0 + 1;
+    const X = (t) => ((t - t0) / Math.max(1, t1 - t0)) * (w - pad * 2) + pad;
+    const Y = (v) => h - pad - ((v - lo) / (hi - lo)) * (h - pad * 2);
+    const pts = history.map((p) => [X(p[0]), Y(p[1])]);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const area = line + ` L${pts.at(-1)[0].toFixed(1)} ${h} L${pts[0][0].toFixed(1)} ${h} Z`;
+    const last = pts.at(-1);
+    host.innerHTML = `
+      <svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="Member count trend">
+        <defs>
+          <linearGradient id="sf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb0ff" stop-opacity=".38"/><stop offset="1" stop-color="#7fb0ff" stop-opacity="0"/></linearGradient>
+          <linearGradient id="sl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9a8cff"/><stop offset="1" stop-color="#3ee6cc"/></linearGradient>
+        </defs>
+        ${[0.25, 0.5, 0.75].map((f) => `<line x1="0" x2="${w}" y1="${(h * f).toFixed(1)}" y2="${(h * f).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-dasharray="2 5"/>`).join('')}
+        <path d="${area}" fill="url(#sf)"/>
+        <path d="${line}" fill="none" stroke="url(#sl)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${last[0]}" cy="${last[1]}" r="9" fill="#3ee6cc" opacity=".18"><animate attributeName="r" values="5;12;5" dur="2.4s" repeatCount="indefinite"/></circle>
+        <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="#3ee6cc" stroke="#04060f" stroke-width="1.5"/>
+      </svg>`;
+    const mins = Math.max(1, Math.round((t1 - t0) / 60000));
+    const change = ms.at(-1) - ms[0];
+    $('#range').textContent = `${change >= 0 ? '+' : '−'}${fmt.format(Math.abs(change))} in ${mins < 60 ? mins + ' min' : (mins / 60).toFixed(1) + ' h'} · low ${fmt.format(Math.min(...ms))} · high ${fmt.format(Math.max(...ms))}`;
+  }
+  new ResizeObserver(() => drawSpark()).observe(host);
+
+  // ---------------------------------------------------------- stats
+  let members = null, updatedAt = null, pollMs = 20000;
+  function applyStats(m) {
+    if (Number.isFinite(m.members)) {
+      if (members !== null) showDelta(m.members - members);
+      members = m.members;
+      setCount(members);
+    }
+    if (Number.isFinite(m.online)) {
+      $('#online').textContent = fmt.format(m.online);
+      if (members) $('#ratio').textContent = (m.online / members * 100).toFixed(1) + '%';
+    }
+    if (m.updatedAt) updatedAt = m.updatedAt;
+    if (m.guild) applyGuild(m.guild);
+    tickUpdated();
+  }
+  function applyGuild(g) {
+    if (g.name) $('#gname').textContent = g.name;
+    if (g.invite) {
+      const url = 'https://discord.gg/' + g.invite;
+      $('#ginvite').href = url; $('#ginvite').textContent = 'discord.gg/' + g.invite; $('#joinBtn').href = url;
+    }
+    if (g.icon && !$('#avatar img')) {
+      const img = new Image(); img.alt = ''; img.src = g.icon;
+      img.onload = () => { $('#avatar').replaceChildren(img); $('#favicon').href = g.icon.replace(/\.gif\?/, '.png?').replace('.webp?', '.png?'); };
+    }
+  }
+  function tickUpdated() {
+    if (!updatedAt) return;
+    const s = Math.max(0, Math.round((Date.now() - updatedAt) / 1000));
+    $('#updated').textContent = `Updated ${s < 5 ? 'just now' : s < 90 ? s + 's ago' : Math.round(s / 60) + ' min ago'} · refreshes every ${Math.round(pollMs / 1000)}s`;
+  }
+  setInterval(tickUpdated, 1000);
+
+  // ---------------------------------------------------------- floating emojis
+  const sky = $('#sky');
+  const MAX_FLOATERS = 90;
+  function float(e, x = Math.random(), s = 1, d = 0, mine = false) {
+    while (sky.childElementCount >= MAX_FLOATERS) sky.firstElementChild.remove();
+    const el = document.createElement('span');
+    el.className = 'floater' + (mine ? ' mine' : '');
+    el.textContent = e;
+    const size = Math.round(34 * s * (mine ? 1.25 : 1));
+    el.style.fontSize = size + 'px';
+    const vw = innerWidth, vh = innerHeight;
+    const startX = x * (vw - size);
+    el.style.left = startX + 'px';
+    sky.appendChild(el);
+
+    let anim;
+    if (reduce) {
+      el.style.bottom = (20 + Math.random() * 60) + 'vh';
+      anim = el.animate([{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 1, offset: .8 }, { opacity: 0 }], { duration: 2600, easing: 'ease-out' });
+    } else {
+      const sway = (40 + Math.random() * 60) * (d || (Math.random() > .5 ? 1 : -1));
+      const rise = vh + 160;
+      const rot = d * 22;
+      const frames = [];
+      for (let i = 0; i <= 10; i++) {
+        const p = i / 10;
+        frames.push({
+          transform: `translate(${(Math.sin(p * Math.PI * 2.2) * sway).toFixed(1)}px, ${(-rise * p).toFixed(1)}px) rotate(${(Math.sin(p * Math.PI * 1.5) * rot).toFixed(1)}deg) scale(${i === 0 ? .3 : i === 1 ? 1.08 : 1})`,
+          opacity: i === 0 ? 0 : i >= 9 ? (i === 10 ? 0 : .7) : 1,
+          offset: p,
+        });
+      }
+      anim = el.animate(frames, { duration: 8200 + Math.random() * 3800, easing: 'cubic-bezier(.33,.0,.4,1)' });
+    }
+    anim.onfinish = () => el.remove();
+  }
+
+  // ---------------------------------------------------------- dock + picker
+  const QUICK = ['🔥', '🚀', '💎', '📈', '💰', '😂', '❤️', '👀', '🐂', '🎯'];
+  const MORE = ['😎','🤑','🥶','🤯','😭','🙏','👏','🫡','💪','🤝','🎉','✨','⚡','🌙','🌊','🍀',
+                '🏆','🥇','👑','🦍','🐻','🦈','🐳','🦅','📉','💸','💵','🪙','🧠','⏰','🎰','🃏',
+                '🕯️','🟢','🔴','✅','❌','💯','🇹🇭','🇺🇸'];
+  const dock = $('#dock');
+  QUICK.forEach((e) => dock.appendChild(btn(e)));
+  const sep = document.createElement('span'); sep.className = 'sepv'; dock.appendChild(sep);
+  const moreBtn = document.createElement('button');
+  moreBtn.className = 'more'; moreBtn.type = 'button'; moreBtn.textContent = '+';
+  moreBtn.setAttribute('aria-label', 'More emojis'); moreBtn.setAttribute('aria-expanded', 'false');
+  dock.appendChild(moreBtn);
+  const grid = $('#moreGrid');
+  MORE.forEach((e) => grid.appendChild(btn(e, true)));
+
+  function btn(e, inPicker) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = e; b.title = 'Send ' + e; b.setAttribute('aria-label', 'Send ' + e);
+    b.addEventListener('click', () => {
+      sendEmoji(e);
+      if (!inPicker) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+    });
+    return b;
+  }
+
+  const picker = $('#picker');
+  function setPicker(open) {
+    picker.hidden = !open;
+    moreBtn.setAttribute('aria-expanded', String(open));
+    moreBtn.textContent = open ? '×' : '+';
+    if (open) setTimeout(() => $('#customInput').focus({ preventScroll: true }), 50);
+  }
+  moreBtn.addEventListener('click', () => setPicker(picker.hidden));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !picker.hidden) setPicker(false); });
+  document.addEventListener('pointerdown', (e) => {
+    if (!picker.hidden && !picker.contains(e.target) && !moreBtn.contains(e.target)) setPicker(false);
+  });
+
+  const seg = 'Segmenter' in Intl ? new Intl.Segmenter('en', { granularity: 'grapheme' }) : null;
+  function oneEmoji(s) {
+    s = (s || '').trim();
+    if (!s) return null;
+    const parts = seg ? [...seg.segment(s)].map((p) => p.segment) : [s];
+    if (parts.length !== 1) return null;
+    return /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(parts[0]) ? parts[0] : null;
+  }
+  $('#customForm').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const e = oneEmoji($('#customInput').value);
+    $('#customErr').hidden = !!e;
+    if (!e) return;
+    sendEmoji(e);
+    $('#customInput').value = '';
+  });
+
+  // client-side pacing mirrors the server (6 burst, 3/s) so taps never feel ignored
+  let tokens = 6, tokAt = Date.now();
+  function sendEmoji(e) {
+    const now = Date.now();
+    tokens = Math.min(6, tokens + (now - tokAt) / 1000 * 3); tokAt = now;
+    if (tokens < 1) return toast('Easy there — one second');
+    tokens -= 1;
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'emoji', e }));
+    else float(e, Math.random(), 1.1, 0, true); // offline: still show it to you
+  }
+
+  let toastTimer;
+  function toast(t) {
+    const el = $('#toast'); el.textContent = t; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+  }
+
+  // ---------------------------------------------------------- socket
+  let ws, retry = 0;
+  function setLive(on, text) {
+    $('#live').classList.toggle('off', !on);
+    $('#liveTxt').textContent = text || (on ? 'Live' : 'Reconnecting');
+  }
+  function connect() {
+    if (location.protocol === 'file:') { setLive(false, 'Offline'); $('#updated').textContent = 'Open through the server (npm start) to go live.'; return; }
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+    ws.onopen = () => { retry = 0; setLive(true); };
+    ws.onclose = () => { setLive(false); setTimeout(connect, Math.min(15000, 700 * 2 ** retry++)); };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (ev) => {
+      let m; try { m = JSON.parse(ev.data); } catch { return; }
+      switch (m.type) {
+        case 'hello':
+          pollMs = m.pollMs || pollMs;
+          history = Array.isArray(m.history) ? m.history : [];
+          members = null;
+          applyStats(m);
+          if (m.guild) applyGuild(m.guild);
+          $('#viewers').textContent = fmt.format(m.viewers || 1);
+          $('#etotal').textContent = fmt.format(m.emojiTotal || 0);
+          drawSpark();
+          break;
+        case 'stats':
+          applyStats(m);
+          if (m.point) { history.push(m.point); if (history.length > 540) history.shift(); drawSpark(); }
+          break;
+        case 'viewers':
+          $('#viewers').textContent = fmt.format(m.n);
+          break;
+        case 'emoji':
+          float(m.e, m.x, m.s, m.d, !!m.mine);
+          $('#etotal').textContent = fmt.format(m.total);
+          break;
+        case 'slow':
+          toast('Easy there — one second');
+          break;
+      }
+    };
+  }
+  connect();
+})();
+</script>
+</body>
+</html>
